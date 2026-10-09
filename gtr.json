@@ -1,23 +1,13 @@
 {
-    "name": "passport-dev",
-    "version": "0.0.0",
-    "private": true,
-    "description": "Local workspace of the passport family (ADR-0006, ADR-0009); not committed",
+    "$schema": "https://raw.githubusercontent.com/shibisty/gtr/main/schema/gtr.schema.json",
+    "name": "passport",
+    "version": "0.1.0",
+    "license": "MIT",
+    "repository": "github:shibisty/passport.go",
     "engines": {
         "go": ">=1.22"
     },
-    "dependencies": {
-        "orm": "file:../orm.go/core",
-        "orm-postgres": "file:../orm.go/drivers/postgres",
-        "orm-redis": "file:../orm.go/drivers/redis"
-    },
-    "workspaces": [
-        "core",
-        "strategies/*",
-        "sessions/*",
-        "example"
-    ],
     "scripts": {
-        "test": "gtr run -r test"
+        "test": "go test ./..."
     }
 }
