@@ -1,0 +1,19 @@
+{
+    "$schema": "https://raw.githubusercontent.com/shibisty/gtr/main/schema/gtr.schema.json",
+    "name": "passport-local",
+    "version": "0.1.0",
+    "license": "MIT",
+    "repository": "github:shibisty/passport.go-local-strategy",
+    "engines": {
+        "go": ">=1.22"
+    },
+    "devDependencies": {
+        "passport": "github:shibisty/passport.go"
+    },
+    "peerDependencies": {
+        "passport": "^0.1"
+    },
+    "scripts": {
+        "test": "go test ./..."
+    }
+}

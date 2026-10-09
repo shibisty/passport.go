@@ -1,0 +1,23 @@
+{
+    "$schema": "https://raw.githubusercontent.com/shibisty/gtr/main/schema/gtr.schema.json",
+    "name": "passport-session-redis",
+    "version": "0.1.0",
+    "license": "MIT",
+    "repository": "github:shibisty/passport.go-redis-session",
+    "engines": {
+        "go": ">=1.22"
+    },
+    "devDependencies": {
+        "orm": "github:shibisty/orm.go",
+        "orm-redis": "github:shibisty/orm.go-redis-driver",
+        "passport": "github:shibisty/passport.go"
+    },
+    "peerDependencies": {
+        "orm": "^0.1",
+        "passport": "^0.1"
+    },
+    "scripts": {
+        "test": "go test ./...",
+        "test:integration": "go test -tags integration ./..."
+    }
+}
