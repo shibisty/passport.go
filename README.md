@@ -3,6 +3,8 @@
 Authentication for Go in the style of [passport.js](https://www.passportjs.org/): a single
 `Authenticator` and independent strategy packages. The core uses only the standard library.
 
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
+
 | Package | What it is |
 |---|---|
 | `passport` (this repository) | `Authenticator`, interfaces, subpackages `jwt`, `passwordhash`, `memorystore`, `httpauth`, `sessionstoretest` |
@@ -116,3 +118,7 @@ gtr run test -- -race
 
 Local layout of the family: `passport.go/{core,strategies/*,sessions/*,example}`,
 a gtr workspace (ADR-0006, ADR-0009).
+
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
+
+If this project helps you, consider supporting its development on Patreon ❤️
