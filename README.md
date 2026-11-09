@@ -59,8 +59,25 @@ Full example — password login, Google/Facebook, logout, JWT, with a test of th
 ### `jwt` — HS256 tokens
 
 - `jwt.New(secret, issuer, opts...)` returns an error if the secret is shorter than 32 bytes.
-- `Verify` accepts only `alg: HS256` (no `none`), and checks the signature,
-  `iss`, `exp` and `nbf`. Clock skew tolerance: `jwt.WithLeeway(d)`.
+- `Verify` checks, in order: size (≤ 8 KiB); header — `alg` exactly `HS256` (`none`,
+  `RS256`, `hs256` are rejected), `typ` `JWT` if present, no `crit`, a known `kid`; the
+  HMAC signature in constant time; then `sub` (required), `iss`, `aud`, `exp` (required),
+  `nbf` and revocation. The key is never taken from the token (`jku`, `jwk`, `x5u` are
+  ignored).
+- Options: `WithLeeway(d)` (clock skew), `WithAudience("api")` (written to `aud`, required
+  on verify), `WithPreviousSecrets(old...)` (key rotation: tokens name their key in
+  `kid`, derived from the secret), `WithRevocation(func(ctx, jti) (bool, error))` (every
+  token has a random `jti`; `TokenID(ctx, token)` returns it and the expiry for a logout
+  list).
+
+```go
+issuer, err := jwt.New(os.Getenv("JWT_SECRET"), "myapp",
+    jwt.WithAudience("api"),
+    jwt.WithPreviousSecrets(os.Getenv("JWT_SECRET_OLD")),
+    jwt.WithRevocation(func(ctx context.Context, jti string) (bool, error) {
+        return redis.Exists(ctx, "revoked:"+jti) // set on logout until the token expires
+    }))
+```
 
 ### `passwordhash` — PBKDF2-HMAC-SHA256
 
