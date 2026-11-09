@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-09
+
 ### Added
 - `passport/refresh`: refresh tokens that rotate on every use, stored as SHA-256 hashes,
   with reuse detection (a spent token revokes its whole login), `Revoke` for logout and
