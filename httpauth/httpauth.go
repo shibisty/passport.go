@@ -159,10 +159,25 @@ func NewState(w http.ResponseWriter) (string, error) {
 	return state, nil
 }
 
+// NewFormPostState is NewState for providers that return with a POST
+// (response_mode=form_post: Apple). A SameSite=Lax cookie is not sent with
+// a cross-site POST, so this one is SameSite=None (still Secure and
+// HttpOnly, single-use, 10 minutes).
+func NewFormPostState(w http.ResponseWriter) (string, error) {
+	state, err := memorystore.NewID()
+	if err != nil {
+		return "", err
+	}
+	c := cookie(StateCookieName, state, stateMaxAge)
+	c.SameSite = http.SameSiteNoneMode
+	http.SetCookie(w, c)
+	return state, nil
+}
+
 // CheckState compares the state parameter from the callback request with the cookie and deletes
 // the cookie (state is single-use). Call it before Authenticator.Callback.
 func CheckState(w http.ResponseWriter, r *http.Request) error {
-	got := r.URL.Query().Get("state")
+	got := r.FormValue("state") // the query, or the body of a form_post callback (Apple)
 	c, err := r.Cookie(StateCookieName)
 	http.SetCookie(w, cookie(StateCookieName, "", -1))
 	if err != nil || got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(c.Value)) != 1 {

@@ -10,6 +10,8 @@
   `GuardFrom`, `RequireGuard`.
 - `httpauth.CSRF` (double-submit token: `csrf_token` cookie, `X-CSRF-Token` header or
   `_csrf` field) and `CSRFToken`.
+- `httpauth.NewFormPostState` (a `SameSite=None` state cookie for form_post callbacks);
+  `CheckState` reads the state from the form too.
 - `passport/ratelimit` (sliding window per key) and `httpauth.LimitLogin` (429 with
   `Retry-After`; a successful login resets the key), `httpauth.ClientIP`.
 

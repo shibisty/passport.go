@@ -14,6 +14,12 @@ Authentication for Go in the style of [passport.js](https://www.passportjs.org/)
 | [`passport-facebook`](https://github.com/shibisty/passport.go-facebook-strategy) | Facebook |
 | [`passport-session-redis`](https://github.com/shibisty/passport.go-redis-session) | Sessions in Redis (via `orm.KeyValueStore`) |
 | [`passport-session-file`](https://github.com/shibisty/passport.go-file-session) | Sessions as files in a directory (no database) |
+| [`passport-session-sql`](https://github.com/shibisty/passport.go-sql-session) | Sessions and refresh tokens in a database through orm |
+| [`passport-github`](https://github.com/shibisty/passport.go-github-strategy) | GitHub (verified email from `/user/emails`) |
+| [`passport-apple`](https://github.com/shibisty/passport.go-apple-strategy) | Sign in with Apple (OIDC, form_post) |
+| [`passport-apikey`](https://github.com/shibisty/passport.go-apikey-strategy) | API keys (hashed, prefixed) |
+| [`passport-magiclink`](https://github.com/shibisty/passport.go-magiclink-strategy) | Passwordless login by email link |
+| [`passport-hash`](https://github.com/shibisty/passport.go-hash) | argon2id and bcrypt password hashing |
 
 Requires Go 1.22+.
 
@@ -108,6 +114,8 @@ example does this).
 - `SetSessionCookie` / `ClearSessionCookie` — cookie `HttpOnly`, `Secure`, `SameSite=Lax`.
 - `NewState(w)` / `CheckState(w, r)` — CSRF protection for OAuth2 login: a random
   single-use `state` in a cookie for 10 minutes. Call `CheckState` before `a.Callback`.
+  `NewFormPostState(w)` is for providers that return with a POST (Apple): its cookie is
+  `SameSite=None`; `CheckState` reads the state from the query or the form.
 
 ### `refresh` — rotating refresh tokens
 

@@ -149,3 +149,21 @@ func TestLimitLogin(t *testing.T) {
 		t.Fatal(rec.Code)
 	}
 }
+
+func TestFormPostState(t *testing.T) {
+	rec := httptest.NewRecorder()
+	state, err := NewFormPostState(rec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := rec.Result().Cookies()[0]
+	if c.SameSite != http.SameSiteNoneMode || !c.Secure || !c.HttpOnly {
+		t.Fatalf("cookie: %+v", c)
+	}
+	req := httptest.NewRequest("POST", "/cb", strings.NewReader(url.Values{"state": {state}, "code": {"x"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: StateCookieName, Value: state})
+	if err := CheckState(httptest.NewRecorder(), req); err != nil {
+		t.Fatalf("form_post state: %v", err)
+	}
+}
