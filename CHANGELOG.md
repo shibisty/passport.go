@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+- `passport/refresh`: refresh tokens that rotate on every use, stored as SHA-256 hashes,
+  with reuse detection (a spent token revokes its whole login), `Revoke` for logout and
+  `MemoryStore`.
+- `httpauth.Web` and `httpauth.API` (guards: session cookie only, Bearer token only),
+  `GuardFrom`, `RequireGuard`.
+- `httpauth.CSRF` (double-submit token: `csrf_token` cookie, `X-CSRF-Token` header or
+  `_csrf` field) and `CSRFToken`.
+- `passport/ratelimit` (sliding window per key) and `httpauth.LimitLogin` (429 with
+  `Retry-After`; a successful login resets the key), `httpauth.ClientIP`.
+
 ### Security
 - JWT audit (`passport/jwt`). Already right: `alg` pinned to HS256 (`none` rejected),
   signature compared in constant time before the claims are read, `exp` required, `iss`

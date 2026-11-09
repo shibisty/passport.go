@@ -7,7 +7,7 @@ Authentication for Go in the style of [passport.js](https://www.passportjs.org/)
 
 | Package | What it is |
 |---|---|
-| `passport` (this repository) | `Authenticator`, interfaces, subpackages `jwt`, `passwordhash`, `memorystore`, `httpauth`, `sessionstoretest` |
+| `passport` (this repository) | `Authenticator`, interfaces, subpackages `jwt`, `refresh`, `passwordhash`, `ratelimit`, `memorystore`, `httpauth`, `sessionstoretest` |
 | [`passport-local`](https://github.com/shibisty/passport.go-local-strategy) | Email and password login |
 | [`passport-oauth2`](https://github.com/shibisty/passport.go-oauth2-strategy) | Any OAuth2 provider (Authorization Code) + a fake provider for tests |
 | [`passport-google`](https://github.com/shibisty/passport.go-google-strategy) | Google |
@@ -96,9 +96,40 @@ example does this).
 
 - `Middleware(a)` identifies the user by `Authorization: Bearer …`, then by the
   `session_id` cookie; `RequireAuth` responds with 401, `FromContext` returns the `Identity`.
+- Guards, as in Laravel: `Web(a)` accepts only the session cookie, `API(a)` only a Bearer
+  token (so a browser's cookie never authenticates an API call); `GuardFrom(ctx)` says
+  which one did (`GuardWeb`, `GuardAPI`), `RequireGuard(GuardAPI)` refuses the other.
+- `CSRF(next)` — double-submit token for cookie-authenticated routes: every response
+  makes sure there is a `csrf_token` cookie, and `POST`/`PUT`/`PATCH`/`DELETE` must send
+  it back in `X-CSRF-Token` or the `_csrf` form field (403 otherwise). Bearer requests are
+  not checked. `CSRFToken(r)` gives the value for a form.
+- `LimitLogin(limiter, key, handler)` — 429 with `Retry-After` after too many attempts per
+  key (`ClientIP(r)`, or IP and email); a successful response (< 400) resets the key.
 - `SetSessionCookie` / `ClearSessionCookie` — cookie `HttpOnly`, `Secure`, `SameSite=Lax`.
 - `NewState(w)` / `CheckState(w, r)` — CSRF protection for OAuth2 login: a random
   single-use `state` in a cookie for 10 minutes. Call `CheckState` before `a.Callback`.
+
+### `refresh` — rotating refresh tokens
+
+```go
+refresher := refresh.New(refresh.NewMemoryStore(), 30*24*time.Hour)
+pair, err := refresher.Issue(ctx, issuer, identity, 15*time.Minute) // access JWT + refresh token
+pair, err = refresher.Rotate(ctx, issuer, pair.Refresh, 15*time.Minute)
+err = refresher.Revoke(ctx, pair.Refresh) // logout
+```
+
+- A refresh token is 32 random bytes; the store keeps only its SHA-256.
+- Each `Rotate` spends the token and issues the next one of the same login (family);
+  presenting a spent token again revokes the whole family (`ErrReused`): a stolen token
+  is useless after the user's next refresh, and the thief's use logs both out.
+- `Store` is four methods (`Save`, `Get`, atomic `Spend`, `RevokeFamily`); `MemoryStore` is
+  for tests and one process.
+
+### `ratelimit` — login attempts
+
+`ratelimit.New(5, time.Minute)` allows 5 attempts a minute per key in a sliding window,
+in memory (`Allow(key)`, `Reset(key)`); implement `ratelimit.Limiter` on Redis for several
+instances. `httpauth.LimitLogin` uses it.
 
 ### `memorystore` — in-memory sessions
 

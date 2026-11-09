@@ -27,6 +27,13 @@ const (
 var ErrBadState = errors.New("httpauth: invalid or expired OAuth2 state")
 
 type identityKey struct{}
+type guardKey struct{}
+
+// Guards, as in Laravel: how a request was authenticated.
+const (
+	GuardWeb = "web" // the session cookie
+	GuardAPI = "api" // an Authorization: Bearer token
+)
 
 // FromContext returns the Identity stored by Middleware.
 func FromContext(ctx context.Context) (*passport.Identity, bool) {
@@ -34,30 +41,52 @@ func FromContext(ctx context.Context) (*passport.Identity, bool) {
 	return id, ok
 }
 
+// GuardFrom returns the guard that authenticated the request (GuardWeb,
+// GuardAPI), or "" if none did.
+func GuardFrom(ctx context.Context) string {
+	g, _ := ctx.Value(guardKey{}).(string)
+	return g
+}
+
 // WithIdentity stores an Identity in the context (for tests and custom middleware).
 func WithIdentity(ctx context.Context, id *passport.Identity) context.Context {
 	return context.WithValue(ctx, identityKey{}, id)
 }
 
+func withGuard(ctx context.Context, id *passport.Identity, guard string) context.Context {
+	return context.WithValue(WithIdentity(ctx, id), guardKey{}, guard)
+}
+
 // Middleware identifies the user:
-//  1. by the "Authorization: Bearer <token>" header, if a TokenIssuer is configured;
-//  2. by the session_id cookie, if a SessionStore is configured.
+//  1. by the "Authorization: Bearer <token>" header, if a TokenIssuer is configured (GuardAPI);
+//  2. by the session_id cookie, if a SessionStore is configured (GuardWeb).
 //
 // If neither succeeds, the request proceeds without an Identity; whether login is required
-// is up to the handler (see RequireAuth).
+// is up to the handler (see RequireAuth). Web and API accept only one of the two.
 func Middleware(a *passport.Authenticator) func(http.Handler) http.Handler {
+	return guarded(a, true, true)
+}
+
+// Web is Middleware for browser routes: the session cookie only.
+func Web(a *passport.Authenticator) func(http.Handler) http.Handler { return guarded(a, true, false) }
+
+// API is Middleware for API routes: the Bearer token only, so a browser's
+// cookie never authenticates an API call (no CSRF on the API).
+func API(a *passport.Authenticator) func(http.Handler) http.Handler { return guarded(a, false, true) }
+
+func guarded(a *passport.Authenticator, web, api bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			if token, ok := bearer(r); ok {
+			if token, ok := bearer(r); ok && api {
 				if identity, err := a.VerifyToken(ctx, token); err == nil {
-					next.ServeHTTP(w, r.WithContext(WithIdentity(ctx, identity)))
+					next.ServeHTTP(w, r.WithContext(withGuard(ctx, identity, GuardAPI)))
 					return
 				}
 			}
-			if cookie, err := r.Cookie(CookieName); err == nil && cookie.Value != "" {
+			if cookie, err := r.Cookie(CookieName); err == nil && cookie.Value != "" && web {
 				if identity, err := a.VerifySession(ctx, cookie.Value); err == nil {
-					next.ServeHTTP(w, r.WithContext(WithIdentity(ctx, identity)))
+					next.ServeHTTP(w, r.WithContext(withGuard(ctx, identity, GuardWeb)))
 					return
 				}
 			}
@@ -74,6 +103,24 @@ func bearer(r *http.Request) (string, bool) {
 	}
 	token = strings.TrimSpace(token)
 	return token, token != ""
+}
+
+// RequireGuard responds with 401 unless the request was authenticated by
+// one of the guards: RequireGuard(GuardAPI) under Middleware refuses a
+// session cookie on an API route.
+func RequireGuard(guards ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			g := GuardFrom(r.Context())
+			for _, want := range guards {
+				if g == want {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+		})
+	}
 }
 
 // RequireAuth responds with 401 if Middleware did not find a user.
