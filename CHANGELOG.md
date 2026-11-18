@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+- `httpauth.CSRFToken` masks the token anew on every call (random pad, `m` + base64url), so a
+  compressed page never repeats it (BREACH); `CSRF` accepts masked tokens and the cookie's value.
+
 ## 0.2.0 — 2026-11-09
 
 ### Added

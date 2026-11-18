@@ -8,18 +8,18 @@ Authentication for Go in the style of [passport.js](https://www.passportjs.org/)
 | Package | What it is |
 |---|---|
 | `passport` (this repository) | `Authenticator`, interfaces, subpackages `jwt`, `refresh`, `passwordhash`, `ratelimit`, `memorystore`, `httpauth`, `sessionstoretest` |
-| [`passport-local`](https://github.com/shibisty/passport.go-local-strategy) | Email and password login |
-| [`passport-oauth2`](https://github.com/shibisty/passport.go-oauth2-strategy) | Any OAuth2 provider (Authorization Code) + a fake provider for tests |
-| [`passport-google`](https://github.com/shibisty/passport.go-google-strategy) | Google |
-| [`passport-facebook`](https://github.com/shibisty/passport.go-facebook-strategy) | Facebook |
-| [`passport-session-redis`](https://github.com/shibisty/passport.go-redis-session) | Sessions in Redis (via `orm.KeyValueStore`) |
-| [`passport-session-file`](https://github.com/shibisty/passport.go-file-session) | Sessions as files in a directory (no database) |
-| [`passport-session-sql`](https://github.com/shibisty/passport.go-sql-session) | Sessions and refresh tokens in a database through orm |
-| [`passport-github`](https://github.com/shibisty/passport.go-github-strategy) | GitHub (verified email from `/user/emails`) |
-| [`passport-apple`](https://github.com/shibisty/passport.go-apple-strategy) | Sign in with Apple (OIDC, form_post) |
-| [`passport-apikey`](https://github.com/shibisty/passport.go-apikey-strategy) | API keys (hashed, prefixed) |
-| [`passport-magiclink`](https://github.com/shibisty/passport.go-magiclink-strategy) | Passwordless login by email link |
-| [`passport-hash`](https://github.com/shibisty/passport.go-hash) | argon2id and bcrypt password hashing |
+| [`@passport/local`](https://github.com/shibisty/passport.go-local-strategy) | Email and password login |
+| [`@passport/oauth2`](https://github.com/shibisty/passport.go-oauth2-strategy) | Any OAuth2 provider (Authorization Code) + a fake provider for tests |
+| [`@passport/google`](https://github.com/shibisty/passport.go-google-strategy) | Google |
+| [`@passport/facebook`](https://github.com/shibisty/passport.go-facebook-strategy) | Facebook |
+| [`@passport/session-redis`](https://github.com/shibisty/passport.go-redis-session) | Sessions in Redis (via `orm.KeyValueStore`) |
+| [`@passport/session-file`](https://github.com/shibisty/passport.go-file-session) | Sessions as files in a directory (no database) |
+| [`@passport/session-sql`](https://github.com/shibisty/passport.go-sql-session) | Sessions and refresh tokens in a database through orm |
+| [`@passport/github`](https://github.com/shibisty/passport.go-github-strategy) | GitHub (verified email from `/user/emails`) |
+| [`@passport/apple`](https://github.com/shibisty/passport.go-apple-strategy) | Sign in with Apple (OIDC, form_post) |
+| [`@passport/apikey`](https://github.com/shibisty/passport.go-apikey-strategy) | API keys (hashed, prefixed) |
+| [`@passport/magiclink`](https://github.com/shibisty/passport.go-magiclink-strategy) | Passwordless login by email link |
+| [`@passport/hash`](https://github.com/shibisty/passport.go-hash) | argon2id and bcrypt password hashing |
 
 Requires Go 1.22+.
 
@@ -28,7 +28,7 @@ Requires Go 1.22+.
 With [gtr](https://github.com/shibisty/gtr) (until the gtr registry, by repository):
 
 ```bash
-gtr add github:shibisty/passport.go github:shibisty/passport.go-local-strategy
+gtr add passport @passport/local
 ```
 
 Then `import "passport"`; strategies have `passport` as a peer dependency.
@@ -48,7 +48,7 @@ if err != nil {
 	log.Fatal(err)
 }
 a := passport.New().
-	UseSessionStore(memorystore.New()). // in production: passport-session-file or passport-session-redis
+	UseSessionStore(memorystore.New()). // in production: @passport/session-file or @passport/session-redis
 	UseTokenIssuer(tokens).
 	Use(local.New(verifyPassword)).
 	Use(google.New(clientID, clientSecret, "https://app.example/auth/google/callback"))
@@ -143,7 +143,7 @@ instances. `httpauth.LimitLogin` uses it.
 
 For development and tests: sessions are lost on restart and are not visible to other
 application instances. To keep them across restarts on one server, use
-`passport-session-file`; for several servers, `passport-session-redis`.
+`@passport/session-file`; for several servers, `@passport/session-redis`.
 
 ### `sessionstoretest` — tests for your own session store
 

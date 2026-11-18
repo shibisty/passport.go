@@ -2,7 +2,9 @@ package httpauth
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/subtle"
+	"encoding/base64"
 	"net"
 	"net/http"
 	"strconv"
@@ -58,7 +60,7 @@ func CSRF(next http.Handler) http.Handler {
 				if got == "" {
 					got = r.PostFormValue(CSRFField)
 				}
-				if got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(token)) != 1 {
+				if got == "" || subtle.ConstantTimeCompare([]byte(unmaskCSRF(got)), []byte(token)) != 1 {
 					http.Error(w, "invalid CSRF token", http.StatusForbidden)
 					return
 				}
@@ -69,9 +71,44 @@ func CSRF(next http.Handler) http.Handler {
 }
 
 // CSRFToken returns the token of a request that passed through CSRF ("" otherwise).
+//
+// The token is masked anew on every call: XORed with random bytes that go
+// along ("m" + base64url(pad + token^pad)). The page then never repeats
+// the same secret bytes, so a compressed response does not leak it by its
+// size (BREACH); CSRF accepts the masked form and the cookie's plain value.
 func CSRFToken(r *http.Request) string {
 	t, _ := r.Context().Value(csrfKey{}).(string)
-	return t
+	if t == "" {
+		return ""
+	}
+	pad := make([]byte, len(t))
+	if _, err := rand.Read(pad); err != nil {
+		return t
+	}
+	out := make([]byte, 2*len(t))
+	copy(out, pad)
+	for i := 0; i < len(t); i++ {
+		out[len(t)+i] = t[i] ^ pad[i]
+	}
+	return "m" + base64.RawURLEncoding.EncodeToString(out)
+}
+
+// unmaskCSRF returns the token inside a masked one (CSRFToken); other
+// values are returned as they are.
+func unmaskCSRF(s string) string {
+	if len(s) < 2 || s[0] != 'm' {
+		return s
+	}
+	b, err := base64.RawURLEncoding.DecodeString(s[1:])
+	if err != nil || len(b)%2 != 0 {
+		return s
+	}
+	n := len(b) / 2
+	out := make([]byte, n)
+	for i := 0; i < n; i++ {
+		out[i] = b[i] ^ b[n+i]
+	}
+	return string(out)
 }
 
 // LimitLogin limits attempts of a login handler: key picks what is limited

@@ -8,8 +8,8 @@
 //  2. "Are you still you?" (subsequent requests) — SessionStore (cookie sessions) or
 //     TokenIssuer (JWT), regardless of which strategy was used to log in.
 //
-// Packages in the family: passport (this one), passport-local, passport-oauth2,
-// passport-google, passport-facebook, passport-session-redis.
+// Packages in the family: passport (this one), passport/local, passport/oauth2,
+// passport/google, passport/facebook, passport/session-redis.
 package passport
 
 import (
@@ -40,7 +40,7 @@ type Strategy interface {
 }
 
 // CredentialStrategy logs in with directly supplied credentials (username/password,
-// API key). It is the equivalent of passport-local.
+// API key). It is the equivalent of passport-local in Node.js.
 type CredentialStrategy interface {
 	Strategy
 	Authenticate(ctx context.Context, credentials map[string]string) (*Identity, error)

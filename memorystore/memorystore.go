@@ -1,7 +1,7 @@
 // Package memorystore implements an in-process, in-memory passport.SessionStore.
 // Suitable for development, tests and single-process applications;
-// to keep sessions across restarts use passport-session-file, for multiple
-// instances passport-session-redis.
+// to keep sessions across restarts use passport/session-file, for multiple
+// instances passport/session-redis.
 package memorystore
 
 import (

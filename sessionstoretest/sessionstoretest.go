@@ -1,5 +1,5 @@
 // Package sessionstoretest is a shared test suite for implementations of
-// passport.SessionStore (memorystore, passport-session-redis, third-party ones).
+// passport.SessionStore (memorystore, passport/session-redis, third-party ones).
 //
 //	func TestStore(t *testing.T) {
 //		sessionstoretest.Run(t, myStore, time.Second)

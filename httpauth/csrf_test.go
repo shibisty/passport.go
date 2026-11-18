@@ -66,8 +66,17 @@ func TestCSRF(t *testing.T) {
 			}
 		}
 	}
-	if len(tok) < 32 || rec.Body.String() != tok {
-		t.Fatalf("token %q, body %q", tok, rec.Body.String())
+	masked := rec.Body.String()
+	if len(tok) < 32 || masked == tok || unmaskCSRF(masked) != tok {
+		t.Fatalf("token %q, body %q", tok, masked)
+	}
+	// masked anew on every page (BREACH)
+	rec2 := httptest.NewRecorder()
+	r2 := httptest.NewRequest("GET", "/form", nil)
+	r2.AddCookie(&http.Cookie{Name: CSRFCookieName, Value: tok})
+	ok.ServeHTTP(rec2, r2)
+	if again := rec2.Body.String(); again == masked || unmaskCSRF(again) != tok {
+		t.Fatalf("not masked anew: %q %q", masked, again)
 	}
 	post := func(header, field string, withCookie bool, auth string) int {
 		form := url.Values{}
@@ -95,6 +104,10 @@ func TestCSRF(t *testing.T) {
 	}{
 		"header":            {200, post(tok, "", true, "")},
 		"form field":        {200, post("", tok, true, "")},
+		"masked field":      {200, post("", masked, true, "")},
+		"masked header":     {200, post(masked, "", true, "")},
+		"bad mask":          {403, post("", "m!!", true, "")},
+		"other mask":        {403, post("", "m"+strings.Repeat("A", 86), true, "")},
 		"missing":           {403, post("", "", true, "")},
 		"wrong":             {403, post(strings.Repeat("x", 64), "", true, "")},
 		"no cookie":         {403, post(tok, "", false, "")},
